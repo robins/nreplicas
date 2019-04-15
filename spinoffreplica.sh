@@ -78,7 +78,7 @@ function is_up_replica() {
 function stop_engine() {
 	port=${1}
 	echo Stopping Engine on Port:${port}
-	${bindir}/pg_ctl -D ${datadir}/data${port} -l logfiles/logfile${port} stop >/dev/null
+	${bindir}/pg_ctl -D ${datadir}/data${port} -m immediate -l logfiles/logfile${port} stop >/dev/null
 }
 
 function initiate_n_replicas() {
@@ -115,6 +115,6 @@ function shutdown_n_replicas() {
 	destroy_engine ${start_port}
 }
 
-replica_count=10
+replica_count=2000
 initiate_n_replicas ${replica_count}
 shutdown_n_replicas ${replica_count}
