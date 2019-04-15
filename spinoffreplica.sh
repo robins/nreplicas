@@ -6,6 +6,25 @@ datadir=${basedir}/data_nested
 start_port=6000
 debug=off
 
+function stop_engine() {
+        port=${1}
+        echo Stopping Engine on Port:${port}
+        ${bindir}/pg_ctl -D ${datadir}/data${port} -m immediate -l logfiles/logfile${port} stop >/dev/null
+}
+
+function stop_all_engines() {
+        count=${1}
+        for i in `seq ${count} -1 1`;
+        do
+                port="$((${start_port}+${i}))"
+                replica_dir=${datadir}/data${port}
+                if [ -f ${replica_dir}/postmaster.pid ]; then
+                        stop_engine ${port}
+                fi
+        done
+        stop_engine ${start_port}
+}
+
 function destroy_engine() {
         port=${1}
         replica_dir=${datadir}/data${port}
@@ -31,6 +50,7 @@ function create_master() {
 	mkdir -p ${datadir}/data${port}
 	${bindir}/initdb --auth-host=trust --auth-local=trust -D ${datadir}/data${port} >/dev/null
 	sed -i "s/#port = /port = ${port}#/g" ${datadir}/data${port}/postgresql.conf
+	sed -i "s/shared_buffers = 128MB/shared_buffers = 256kB/g" ${datadir}/data${port}/postgresql.conf
 
 }
 
@@ -75,12 +95,6 @@ function is_up_replica() {
 	fi
 }
 
-function stop_engine() {
-	port=${1}
-	echo Stopping Engine on Port:${port}
-	${bindir}/pg_ctl -D ${datadir}/data${port} -m immediate -l logfiles/logfile${port} stop >/dev/null
-}
-
 function initiate_n_replicas() {
 	count=${1}
 	master_port=${start_port}
@@ -108,13 +122,12 @@ function shutdown_n_replicas() {
 	for i in `seq ${count} -1 1`;
 	do
 		port="$((${start_port}+${i}))"
-		stop_engine ${port}
 		destroy_engine ${port}
 	done
 	stop_engine ${start_port}
 	destroy_engine ${start_port}
 }
 
-replica_count=2000
+replica_count=1000
 initiate_n_replicas ${replica_count}
-shutdown_n_replicas ${replica_count}
+#shutdown_n_replicas ${replica_count}
