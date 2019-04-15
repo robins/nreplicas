@@ -102,7 +102,7 @@ function initiate_n_replicas() {
 
 function shutdown_n_replicas() {
 	count=${1}
-	for i in `seq 1 ${count}`;
+	for i in `seq ${count} -1 1`;
 	do
 		port="$((${start_port}+${i}))"
 		stop_engine ${port}
@@ -112,5 +112,5 @@ function shutdown_n_replicas() {
 #	destroy_engine ${start_port}
 }
 
-initiate_n_replicas 1
-shutdown_n_replicas 1
+initiate_n_replicas 2
+shutdown_n_replicas 2
