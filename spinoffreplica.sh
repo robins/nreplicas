@@ -11,7 +11,9 @@ function destroy_engine() {
         replica_dir=${datadir}/data${port}
 
         echo Destroying Engine on Port:${port}
-	stop_engine ${port}
+	if [ -f ${replica_dir}/postmaster.pid ]; then
+		stop_engine ${port}
+	fi
         cd ${datadir}
         rm -rf data${port}
 	cd ${basedir}
@@ -107,10 +109,10 @@ function shutdown_n_replicas() {
 	do
 		port="$((${start_port}+${i}))"
 		stop_engine ${port}
-#		destroy_engine ${port}
+		destroy_engine ${port}
 	done
 	stop_engine ${start_port}
-#	destroy_engine ${start_port}
+	destroy_engine ${start_port}
 }
 
 replica_count=10
