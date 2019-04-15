@@ -11,6 +11,7 @@ function destroy_engine() {
         replica_dir=${datadir}/data${port}
 
         echo Destroying Engine on Port:${port}
+	stop_engine ${port}
         cd ${datadir}
         rm -rf data${port}
 	cd ${basedir}
@@ -112,5 +113,6 @@ function shutdown_n_replicas() {
 #	destroy_engine ${start_port}
 }
 
-initiate_n_replicas 2
-shutdown_n_replicas 2
+replica_count=10
+initiate_n_replicas ${replica_count}
+shutdown_n_replicas ${replica_count}
