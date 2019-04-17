@@ -12,6 +12,14 @@ debug_level=20
 # 25 Above + Some more DONE messages
 # 30 Above + Pending action items
 
+function scriptpanic () {
+	echo "SCRIPT PANIC"
+	echo "============"
+        echo
+        echo $1
+        echo
+	exit;
+}
 
 function decho () {
 	[[ ${2} -le ${debug_level} ]] && echo ${1}
@@ -63,7 +71,13 @@ function create_master() {
 
 	decho "Creating DataDir for Port:${port}" 20
 	mkdir -p ${datadir}/data${port}
-	${bindir}/initdb --auth-host=trust --auth-local=trust -D ${datadir}/data${port} >/dev/null
+	capture_output=`${bindir}/initdb --auth-host=trust --auth-local=trust -D ${datadir}/data${port} 2>&1 >/dev/null`
+        if [[ ${capture_output} == *"exists but is not empty"* ]]; then
+                decho "initdb failed for some reason. Aborting" 5
+echo ${capture_output}
+		scriptpanic ${capture_output}
+        fi
+
 	sed -i "s/#port = /port = ${port}#/g" ${datadir}/data${port}/postgresql.conf
 	sed -i "s/shared_buffers = 128MB/shared_buffers = 128kB/g" ${datadir}/data${port}/postgresql.conf
 	decho "Creating DataDir for Port:${port} DONE" 25
@@ -80,7 +94,12 @@ function create_replica() {
         fi
 
         decho "Creating Replica for Port:${port}" 20
-	${bindir}/pg_basebackup -R -p ${master_port} -D ${replica_dir}
+	capture_output=`${bindir}/pg_basebackup -R -p ${master_port} -D ${replica_dir}  2>&1 > /dev/null`
+	if [[ ${capture_output} == *"could not connect to server"* ]]; then
+		decho "pg_basebackup for Port:${port} failed for some reason. Aborting" 5
+		panic ${capture_output}
+	fi
+
 	sed -i "s/port = /port = ${port}#/g" ${datadir}/data${port}/postgresql.conf
         decho "Creating Replica for Port:${port} DONE" 25
 }
@@ -122,6 +141,12 @@ function is_up_replica() {
 function initiate_n_replicas() {
 	count=${1}
 
+	tempdel=${debug_level}
+	debug_level=15
+	decho "Precautionary Shutdown of all engines, if they're already running" 11
+	shutdown_n_replicas ${replica_count}
+	debug_level=${tempdel}
+
 	decho "Initiating all Replicas" 11
 	master_port=${start_port}
 
@@ -156,6 +181,6 @@ function shutdown_n_replicas() {
 	decho "Shutting down all Replicas DONE" 14
 }
 
-replica_count=1000
-#initiate_n_replicas ${replica_count}
+replica_count=10
+initiate_n_replicas ${replica_count}
 shutdown_n_replicas ${replica_count}
