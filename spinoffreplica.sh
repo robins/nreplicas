@@ -13,11 +13,9 @@ debug_level=20
 # 30 Above + Pending action items
 
 function scriptpanic () {
+	echo "============"
 	echo "SCRIPT PANIC"
 	echo "============"
-        echo
-        echo $1
-        echo
 	exit;
 }
 
@@ -74,8 +72,8 @@ function create_master() {
 	capture_output=`${bindir}/initdb --auth-host=trust --auth-local=trust -D ${datadir}/data${port} 2>&1 >/dev/null`
         if [[ ${capture_output} == *"exists but is not empty"* ]]; then
                 decho "initdb failed for some reason. Aborting" 5
-echo ${capture_output}
-		scriptpanic ${capture_output}
+		echo ${capture_output}
+		scriptpanic
         fi
 
 	sed -i "s/#port = /port = ${port}#/g" ${datadir}/data${port}/postgresql.conf
@@ -97,7 +95,8 @@ function create_replica() {
 	capture_output=`${bindir}/pg_basebackup -R -p ${master_port} -D ${replica_dir}  2>&1 > /dev/null`
 	if [[ ${capture_output} == *"could not connect to server"* ]]; then
 		decho "pg_basebackup for Port:${port} failed for some reason. Aborting" 5
-		panic ${capture_output}
+		echo ${capture_output}
+		scriptpanic
 	fi
 
 	sed -i "s/port = /port = ${port}#/g" ${datadir}/data${port}/postgresql.conf
