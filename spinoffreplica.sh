@@ -1,6 +1,6 @@
 #!/bin/bash
 
-basedir=/home/ubuntu/projects/nreplicas
+basedir=`pwd`
 bindir=/opt/postgres/master/bin
 datadir=${basedir}/data_nested
 start_port=6000
@@ -92,7 +92,7 @@ function create_replica() {
         fi
 
         decho "Creating Replica for Port:${port}" 20
-	capture_output=`${bindir}/pg_basebackup -R -p ${master_port} -D ${replica_dir}  2>&1 > /dev/null`
+	capture_output=`${bindir}/pg_basebackup -R -U robins -p ${master_port} -D ${replica_dir}  2>&1 > /dev/null`
 	if [[ ${capture_output} == *"could not connect to server"* ]]; then
 		decho "pg_basebackup for Port:${port} failed for some reason. Aborting" 5
 		echo ${capture_output}
